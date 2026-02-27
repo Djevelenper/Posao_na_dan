@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  /* Visma-inspired professional palette */
+  --color-primary: #002E5D; /* Deep Visma Blue */
+  --color-primary-light: #0072C6; /* Bright Visma Blue */
+  --color-accent: #E31D1A; /* Visma Red for highlights */
+  --color-success: #2E7D32;
+  --color-warning: #ED6C02;
+  --color-info: #0288D1;
+  
+  --color-slate-50: #F8F9FA;
+  --color-slate-100: #E9ECEF;
+  --color-slate-200: #DEE2E6;
+  --color-slate-300: #CED4DA;
+  --color-slate-400: #ADB5BD;
+  --color-slate-500: #6C757D;
+  --color-slate-600: #495057;
+  --color-slate-700: #343A40;
+  --color-slate-800: #212529;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-slate-50 text-slate-800 antialiased;
+  }
+}
+
+/* Custom Calendar Styles - Professional Minimalist */
+.react-calendar {
+  width: 100% !important;
+  border: none !important;
+  font-family: inherit !important;
+  background: transparent !important;
+}
+
+.react-calendar__navigation button {
+  @apply !text-primary !font-bold !text-lg;
+}
+
+.react-calendar__month-view__weekdays {
+  @apply !text-slate-400 !font-bold !text-[10px] !uppercase !mb-2;
+}
+
+.react-calendar__tile {
+  @apply !py-3 !text-sm !font-medium !rounded-lg !transition-all !relative;
+}
+
+.react-calendar__tile--now {
+  @apply !bg-slate-200 !text-primary;
+}
+
+.react-calendar__tile--active {
+  @apply !bg-primary !text-white !shadow-sm;
+}
+
+.react-calendar__tile:hover {
+  @apply !bg-slate-100;
+}
+
+.day-indicator {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+
+.day-indicator.booked {
+  @apply bg-primary;
+}
+
+.day-indicator.available {
+  @apply bg-success;
+}

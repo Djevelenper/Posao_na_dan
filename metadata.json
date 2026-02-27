@@ -1,0 +1,7 @@
+{
+  "name": "POSAO NA DAN",
+  "description": "Premium platforma za povezivanje poslodavaca i radnika za dnevne smene u ugostiteljstvu i zdravstvu.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
