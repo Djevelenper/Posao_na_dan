@@ -13,6 +13,8 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
   const [selectedDateShifts, setSelectedDateShifts] = useState<Shift[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'explore' | 'my-shifts' | 'profile'>('explore');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [minPay, setMinPay] = useState<number>(0);
   const [user] = useState<UserType>({
     id: 'w1',
     name: 'Nikola Petrović',
@@ -77,6 +79,18 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
   };
 
   const myShifts = shifts.filter(s => s.status === 'pending' || s.status === 'booked');
+  const totalEarnings = shifts
+    .filter(s => s.status === 'booked')
+    .reduce((acc, s) => acc + (s.pay * 8), 0); // Assuming 8h shift for demo
+
+  const filteredShifts = shifts.filter(s => {
+    const matchesRole = filterRole === 'all' || s.role === filterRole;
+    const matchesPay = s.pay >= minPay;
+    const isOpen = s.status === 'open';
+    return matchesRole && matchesPay && isOpen;
+  });
+
+  const uniqueRoles = Array.from(new Set(shifts.map(s => s.role)));
 
   return (
     <div className="pb-20 bg-slate-50 min-h-screen">
@@ -113,18 +127,46 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
             </section>
 
             <section className="space-y-4">
-              <div className="flex justify-between items-center px-2">
-                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Preporučeno za tebe</h2>
-                <span className="text-[10px] font-bold text-slate-400">{shifts.filter(s => s.status === 'open').length} dostupno</span>
+              <div className="flex flex-col gap-4 px-2">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Dostupne smene</h2>
+                  <span className="text-[10px] font-bold text-slate-400">{filteredShifts.length} rezultata</span>
+                </div>
+                
+                {/* Filters */}
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  <button 
+                    onClick={() => setFilterRole('all')}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all",
+                      filterRole === 'all' ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-slate-400 border border-slate-200"
+                    )}
+                  >
+                    Sve uloge
+                  </button>
+                  {uniqueRoles.map(role => (
+                    <button 
+                      key={role}
+                      onClick={() => setFilterRole(role)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all",
+                        filterRole === role ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-white text-slate-400 border border-slate-200"
+                      )}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
               </div>
+
               <div className="space-y-3">
-                {shifts.filter(s => s.status === 'open').length > 0 ? (
-                  shifts.filter(s => s.status === 'open').map(shift => (
+                {filteredShifts.length > 0 ? (
+                  filteredShifts.map(shift => (
                     <ShiftCard key={shift.id} shift={shift} onApply={() => handleApply(shift.id)} />
                   ))
                 ) : (
                   <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-                    <p className="text-slate-400 text-sm">Trenutno nema dostupnih smena.</p>
+                    <p className="text-slate-400 text-sm">Nema smena koje odgovaraju filterima.</p>
                   </div>
                 )}
               </div>
@@ -157,14 +199,18 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
               <h2 className="text-xl font-bold text-slate-800">{user.name}</h2>
               <p className="text-slate-500 text-sm mb-6">{user.city} • {industry === 'hospitality' ? 'Ugostiteljstvo' : 'Zdravstvo'}</p>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-4 rounded-xl">
-                  <p className="text-2xl font-bold text-primary">{user.rating}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Ocena</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-slate-50 p-3 rounded-xl">
+                  <p className="text-lg font-bold text-primary">{user.rating}</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase">Ocena</p>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl">
-                  <p className="text-2xl font-bold text-primary">{user.completedShifts}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Smena</p>
+                <div className="bg-slate-50 p-3 rounded-xl">
+                  <p className="text-lg font-bold text-primary">{user.completedShifts}</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase">Smena</p>
+                </div>
+                <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
+                  <p className="text-lg font-bold text-primary">{totalEarnings}€</p>
+                  <p className="text-[8px] font-bold text-primary/60 uppercase">Zarada</p>
                 </div>
               </div>
             </section>
@@ -216,9 +262,20 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
 const ShiftCard: React.FC<{ shift: Shift, onApply?: () => void | Promise<void> }> = ({ shift, onApply }) => {
   const isPending = shift.status === 'pending';
   const isBooked = shift.status === 'booked';
+  
+  // Urgent if shift starts in less than 24h
+  const isUrgent = new Date(shift.date).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000 && shift.status === 'open';
 
   return (
-    <motion.div className="bg-white border border-slate-200 rounded-xl p-4 hover:border-primary/30 transition-all shadow-sm group">
+    <motion.div className={cn(
+      "bg-white border rounded-xl p-4 transition-all shadow-sm group relative overflow-hidden",
+      isUrgent ? "border-red-100 bg-red-50/30" : "border-slate-200 hover:border-primary/30"
+    )}>
+      {isUrgent && (
+        <div className="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-widest">
+          Hitno
+        </div>
+      )}
       <div className="flex gap-4">
         <img src={shift.venueAvatar} alt={shift.venueName} className="w-12 h-12 rounded-lg object-cover border border-slate-100" />
         <div className="flex-1">

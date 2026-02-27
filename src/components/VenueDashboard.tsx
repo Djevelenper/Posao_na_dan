@@ -98,6 +98,7 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
             value={pendingShifts.length} 
             icon={<AlertCircle className="w-5 h-5 text-warning" />}
             color="bg-slate-100"
+            badge={pendingShifts.length > 0}
           />
         </div>
 
@@ -291,9 +292,15 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
   );
 }
 
-function StatCard({ label, value, icon, color }: { label: string, value: number, icon: React.ReactNode, color: string }) {
+function StatCard({ label, value, icon, color, badge }: { label: string, value: number, icon: React.ReactNode, color: string, badge?: boolean }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative">
+      {badge && (
+        <span className="absolute top-3 right-3 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-warning"></span>
+        </span>
+      )}
       <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-3", color)}>
         {icon}
       </div>

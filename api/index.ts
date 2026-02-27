@@ -1,6 +1,9 @@
 import express from "express";
 import path from "path";
 
+type Industry = 'hospitality' | 'healthcare';
+type City = 'Beograd' | 'Novi Sad' | 'Kragujevac' | 'Niš' | 'Subotica';
+
 const app = express();
 app.use(express.json());
 
@@ -12,22 +15,78 @@ const getISO = (daysOffset: number) => {
 };
 
 // In-memory store (Napomena: Na Vercelu se ovo resetuje pri svakom novom zahtevu jer je serverless)
-let shifts = [
-  // --- BEOGRAD ---
-  { id: "b1", venueId: "bv1", venueName: "Kafeterija Vračar", venueAvatar: "https://picsum.photos/seed/cafe1/100/100", distance: "1.2 km", date: getISO(0), startTime: "08:00", endTime: "16:00", role: "Bartender", pay: 35, status: "open", industry: "hospitality", city: "Beograd" },
-  { id: "b2", venueId: "bv2", venueName: "Red Bar", venueAvatar: "https://picsum.photos/seed/bar1/100/100", distance: "0.8 km", date: getISO(1), startTime: "18:00", endTime: "02:00", role: "Waiter", pay: 40, status: "open", industry: "hospitality", city: "Beograd" },
-  { id: "b3", venueId: "bv3", venueName: "Destino", venueAvatar: "https://picsum.photos/seed/destino/100/100", distance: "1.5 km", date: getISO(2), startTime: "12:00", endTime: "20:00", role: "Konobar", pay: 38, status: "open", industry: "hospitality", city: "Beograd" },
-  { id: "b9", venueId: "bv9", venueName: "Madera", venueAvatar: "https://picsum.photos/seed/madera/100/100", distance: "1.0 km", date: new Date().toISOString(), startTime: "12:00", endTime: "22:00", role: "Konobar", pay: 50, status: "open", industry: "hospitality", city: "Beograd" },
-  { id: "bh1", venueId: "bhv1", venueName: "VMA", department: "Neurologija", venueAvatar: "https://picsum.photos/seed/vma/100/100", distance: "2.5 km", date: getISO(0), startTime: "07:00", endTime: "15:00", role: "Medicinska sestra", pay: 50, status: "open", industry: "healthcare", city: "Beograd" },
-  
-  // --- NOVI SAD ---
-  { id: "n1", venueId: "nv1", venueName: "Project 72", venueAvatar: "https://picsum.photos/seed/p72/100/100", distance: "1.0 km", date: new Date().toISOString(), startTime: "12:00", endTime: "20:00", role: "Konobar", pay: 35, status: "open", industry: "hospitality", city: "Novi Sad" },
-  { id: "nh1", venueId: "nhv1", venueName: "Klinički centar Vojvodine", department: "Kardiologija", venueAvatar: "https://picsum.photos/seed/kcv/100/100", distance: "2.0 km", date: new Date().toISOString(), startTime: "07:00", endTime: "15:00", role: "Medicinska sestra", pay: 55, status: "open", industry: "healthcare", city: "Novi Sad" },
-  
-  // --- KRAGUJEVAC ---
-  { id: "k1", venueId: "kv1", venueName: "Mustang", venueAvatar: "https://picsum.photos/seed/mustang/100/100", distance: "1.5 km", date: new Date().toISOString(), startTime: "12:00", endTime: "20:00", role: "Konobar", pay: 30, status: "open", industry: "hospitality", city: "Kragujevac" },
-  { id: "kh1", venueId: "khv1", venueName: "UKC Kragujevac", department: "Ortopedija", venueAvatar: "https://picsum.photos/seed/ukck/100/100", distance: "1.5 km", date: new Date().toISOString(), startTime: "07:00", endTime: "15:00", role: "Medicinska sestra", pay: 50, status: "open", industry: "healthcare", city: "Kragujevac" }
-];
+const generateShifts = () => {
+  const cities = ['Beograd', 'Novi Sad', 'Kragujevac'];
+  const industries = ['hospitality', 'healthcare'];
+  const venues: Record<string, any[]> = {
+    'Beograd_hospitality': [
+      { name: "Kafeterija Vračar", avatar: "cafe1" }, { name: "Red Bar", avatar: "bar1" }, { name: "Destino", avatar: "destino" },
+      { name: "Smokvica", avatar: "smokvica" }, { name: "Koffein", avatar: "koffein" }, { name: "Hotel Moskva", avatar: "moskva" }
+    ],
+    'Beograd_healthcare': [
+      { name: "VMA", avatar: "vma" }, { name: "Bel Medic", avatar: "belmedic" }, { name: "Medigroup", avatar: "medigroup" },
+      { name: "Euromedik", avatar: "euromedik" }
+    ],
+    'Novi Sad_hospitality': [
+      { name: "Project 72", avatar: "p72" }, { name: "Fish & Zelenish", avatar: "fish" }, { name: "Petrus", avatar: "petrus" },
+      { name: "Trčika", avatar: "trcika" }, { name: "Absolut", avatar: "absolut" }, { name: "Loft", avatar: "loft" }
+    ],
+    'Novi Sad_healthcare': [
+      { name: "KCV", avatar: "kcv" }, { name: "Poliklinika Marić", avatar: "maric" }, { name: "MC Poliklinika", avatar: "mc" },
+      { name: "Global Care", avatar: "global" }
+    ],
+    'Kragujevac_hospitality': [
+      { name: "Mustang", avatar: "mustang" }, { name: "Panorama", avatar: "panorama" }, { name: "Dvorište", avatar: "dvoriste" },
+      { name: "Caffe Cinema", avatar: "cinema" }, { name: "Oblomov", avatar: "oblomov" }, { name: "Triptih", avatar: "triptih" }
+    ],
+    'Kragujevac_healthcare': [
+      { name: "UKC Kragujevac", avatar: "ukck" }, { name: "Poliklinika Kragujmed", avatar: "kragujmed" }, { name: "Medikus", avatar: "medikus" },
+      { name: "Sanitas", avatar: "sanitas" }
+    ]
+  };
+
+  const roles = {
+    hospitality: ["Konobar", "Šanker", "Kuvar", "Pomoćni radnik", "Barista", "Hostesa"],
+    healthcare: ["Medicinska sestra", "Tehničar", "Babica", "Laborant", "Negovatelj"]
+  };
+
+  const allShifts: any[] = [];
+  const now = new Date();
+
+  cities.forEach(city => {
+    industries.forEach(industry => {
+      const key = `${city}_${industry}`;
+      const cityVenues = venues[key] || [];
+      
+      for (let m = 0; m < 3; m++) {
+        for (let i = 0; i < 5; i++) {
+          const venue = cityVenues[i % cityVenues.length];
+          const date = new Date(now.getFullYear(), now.getMonth() + m, now.getDate() + (i * 3));
+          const role = roles[industry as keyof typeof roles][Math.floor(Math.random() * roles[industry as keyof typeof roles].length)];
+          
+          allShifts.push({
+            id: `${city[0]}${industry[0]}${m}${i}`,
+            venueId: `v_${city[0]}${i}`,
+            venueName: venue.name,
+            venueAvatar: `https://picsum.photos/seed/${venue.avatar}/100/100`,
+            distance: `${(Math.random() * 5).toFixed(1)} km`,
+            date: date.toISOString(),
+            startTime: "08:00",
+            endTime: "16:00",
+            role: role,
+            pay: Math.floor(Math.random() * 30) + 30,
+            status: "open",
+            industry: industry,
+            city: city
+          });
+        }
+      }
+    });
+  });
+  return allShifts;
+};
+
+let shifts = generateShifts();
 
 // API rute
 app.get("/api/shifts", (req, res) => {
