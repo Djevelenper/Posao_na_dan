@@ -1,6 +1,6 @@
 export type UserRole = 'worker' | 'venue';
 export type Industry = 'hospitality' | 'healthcare';
-export type City = 'Beograd' | 'Novi Sad' | 'Kragujevac' | 'Niš' | 'Subotica';
+export type City = 'Beograd' | 'Novi Sad' | 'Kragujevac' | 'Niš' | 'Subotica' | 'Trebinje' | 'Banja Luka';
 
 export interface User {
   id: string;

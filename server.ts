@@ -4,7 +4,7 @@ import path from "path";
 
 type UserRole = 'worker' | 'venue';
 type Industry = 'hospitality' | 'healthcare';
-type City = 'Beograd' | 'Novi Sad' | 'Kragujevac' | 'Niš' | 'Subotica';
+type City = 'Beograd' | 'Novi Sad' | 'Kragujevac' | 'Niš' | 'Subotica' | 'Trebinje' | 'Banja Luka';
 
 async function startServer() {
   const app = express();
@@ -21,7 +21,7 @@ async function startServer() {
 
   // In-memory store for demo purposes
   const generateShifts = () => {
-    const cities: City[] = ['Beograd', 'Novi Sad', 'Kragujevac'];
+    const cities: City[] = ['Beograd', 'Novi Sad', 'Kragujevac', 'Trebinje', 'Banja Luka'];
     const industries: Industry[] = ['hospitality', 'healthcare'];
     const venues: Record<string, any[]> = {
       'Beograd_hospitality': [
@@ -47,6 +47,20 @@ async function startServer() {
       'Kragujevac_healthcare': [
         { name: "UKC Kragujevac", avatar: "ukck" }, { name: "Poliklinika Kragujmed", avatar: "kragujmed" }, { name: "Medikus", avatar: "medikus" },
         { name: "Sanitas", avatar: "sanitas" }
+      ],
+      'Trebinje_hospitality': [
+        { name: "Platani", avatar: "platani" }, { name: "Market", avatar: "market" }, { name: "Porto Galo", avatar: "porto" },
+        { name: "Klub 089", avatar: "klub" }, { name: "Azzaro", avatar: "azzaro" }
+      ],
+      'Trebinje_healthcare': [
+        { name: "Bolnica Trebinje", avatar: "bolnicatb" }, { name: "Dom zdravlja Trebinje", avatar: "dztb" }
+      ],
+      'Banja Luka_hospitality': [
+        { name: "Mala Stanica", avatar: "stanica" }, { name: "Baza", avatar: "baza" }, { name: "Kafeterija 5", avatar: "k5" },
+        { name: "Combo", avatar: "combo" }, { name: "Smuggler", avatar: "smuggler" }
+      ],
+      'Banja Luka_healthcare': [
+        { name: "UKC RS", avatar: "ukcrs" }, { name: "Zavod Dr Miroslav Zotović", avatar: "zotovic" }, { name: "Dom zdravlja BL", avatar: "dzbl" }
       ]
     };
 

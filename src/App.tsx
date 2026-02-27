@@ -31,7 +31,7 @@ export default function App() {
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Izaberi grad</p>
             </div>
             <div className="divide-y divide-slate-100">
-              {(['Beograd', 'Novi Sad', 'Kragujevac', 'Niš', 'Subotica'] as City[]).map((c) => (
+              {(['Beograd', 'Novi Sad', 'Kragujevac', 'Niš', 'Subotica', 'Trebinje', 'Banja Luka'] as City[]).map((c) => (
                 <button 
                   key={c}
                   onClick={() => setCity(c)}
