@@ -7,7 +7,7 @@ import { MapPin, Clock, Euro, CheckCircle2, User, Calendar as CalendarIcon, Brie
 import { Shift, User as UserType, Industry, City } from '../types';
 import { cn } from '../lib/utils';
 
-export default function WorkerDashboard({ industry, city }: { industry: Industry, city: City }) {
+export default function WorkerDashboard({ industry, city, worker }: { industry: Industry, city: City, worker: any }) {
   const [date, setDate] = useState<Date>(new Date());
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedDateShifts, setSelectedDateShifts] = useState<Shift[]>([]);
@@ -16,14 +16,9 @@ export default function WorkerDashboard({ industry, city }: { industry: Industry
   const [filterRole, setFilterRole] = useState<string>('all');
   const [minPay, setMinPay] = useState<number>(0);
   const [user] = useState<UserType>({
-    id: 'w1',
-    name: 'Nikola Petrović',
-    role: 'worker',
-    industry: industry,
+    ...worker,
     city: city,
-    avatar: 'https://picsum.photos/seed/worker1/200/200',
-    rating: 4.9,
-    completedShifts: 25
+    industry: industry
   });
 
   useEffect(() => {

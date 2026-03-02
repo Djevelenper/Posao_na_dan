@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Calendar as CalendarIcon, Clock, Users, Euro, CheckCircle2, AlertCircle, ChevronRight, LayoutDashboard, Stethoscope, HeartPulse } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, Users, Euro, CheckCircle2, AlertCircle, ChevronRight, LayoutDashboard, Stethoscope, HeartPulse, Edit2, Trash2 } from 'lucide-react';
 import { Shift, Industry, City } from '../types';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
-export default function VenueDashboard({ industry, city }: { industry: Industry, city: City }) {
+export default function VenueDashboard({ industry, city, venue }: { industry: Industry, city: City, venue: any }) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'shifts'>('dashboard');
 
   useEffect(() => {
     fetchShifts();
-  }, [industry, city]);
+  }, [industry, city, venue.id]);
 
   const fetchShifts = async (retries = 3) => {
     try {
-      const res = await fetch(`/api/shifts?industry=${industry}&city=${city}`);
+      const res = await fetch(`/api/shifts?industry=${industry}&city=${city}&venueId=${venue.id}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       setShifts(data);
@@ -32,9 +33,10 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
   const handlePostShift = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newShift = {
-      venueName: industry === 'hospitality' ? "Tvoj Lokal" : "Tvoja Ustanova",
-      venueAvatar: industry === 'hospitality' ? "https://picsum.photos/seed/myvenue/100/100" : "https://picsum.photos/seed/myhospital/100/100",
+    const shiftData = {
+      venueId: venue.id,
+      venueName: venue.name,
+      venueAvatar: venue.avatar.startsWith('http') ? venue.avatar : `https://picsum.photos/seed/${venue.avatar}/100/100`,
       distance: "0 km",
       date: formData.get('date'),
       startTime: formData.get('startTime'),
@@ -46,15 +48,31 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
       city: city
     };
 
-    const res = await fetch('/api/shifts', {
-      method: 'POST',
+    const url = editingShift ? `/api/shifts/${editingShift.id}` : '/api/shifts';
+    const method = editingShift ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newShift),
+      body: JSON.stringify(shiftData),
     });
 
     if (res.ok) {
       setIsPostModalOpen(false);
+      setEditingShift(null);
       fetchShifts();
+    }
+  };
+
+  const handleEditShift = (shift: Shift) => {
+    setEditingShift(shift);
+    setIsPostModalOpen(true);
+  };
+
+  const handleDeleteShift = async (id: string) => {
+    if (window.confirm('Da li ste sigurni da želite da obrišete ovu smenu?')) {
+      const res = await fetch(`/api/shifts/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchShifts();
     }
   };
 
@@ -72,11 +90,14 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4">
         <div className="flex justify-between items-center max-w-lg mx-auto">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{city} • {industry === 'hospitality' ? 'Ugostiteljstvo' : 'Zdravstvo'}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{city} • {venue.name}</p>
             <h1 className="text-xl font-bold text-primary">Upravljanje</h1>
           </div>
           <button 
-            onClick={() => setIsPostModalOpen(true)}
+            onClick={() => {
+              setEditingShift(null);
+              setIsPostModalOpen(true);
+            }}
             className="bg-primary text-white p-2.5 rounded-xl shadow-sm hover:bg-primary-light transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -170,15 +191,33 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-slate-700">{shift.pay}€</p>
-                    <p className={cn(
-                      "text-[8px] font-bold uppercase tracking-wider",
-                      shift.status === 'booked' ? "text-success" : 
-                      shift.status === 'pending' ? "text-warning" : "text-slate-300"
-                    )}>
-                      {shift.status === 'booked' ? 'Popunjeno' : shift.status === 'pending' ? 'Prijava' : 'Otvoreno'}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-slate-700">{shift.pay}€</p>
+                      <p className={cn(
+                        "text-[8px] font-bold uppercase tracking-wider",
+                        shift.status === 'booked' ? "text-success" : 
+                        shift.status === 'pending' ? "text-warning" : "text-slate-300"
+                      )}>
+                        {shift.status === 'booked' ? 'Popunjeno' : shift.status === 'pending' ? 'Prijava' : 'Otvoreno'}
+                      </p>
+                    </div>
+                    {shift.status === 'open' && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEditShift(shift)}
+                          className="p-1.5 text-slate-400 hover:text-primary transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteShift(shift.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -186,7 +225,10 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
               <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
                 <p className="text-slate-400 text-sm">Još uvek niste objavili nijednu smenu.</p>
                 <button 
-                  onClick={() => setIsPostModalOpen(true)}
+                  onClick={() => {
+                    setEditingShift(null);
+                    setIsPostModalOpen(true);
+                  }}
                   className="mt-4 text-primary text-xs font-bold uppercase tracking-wider hover:underline"
                 >
                   Objavi prvu smenu
@@ -204,33 +246,33 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPostModalOpen(false)} className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-40" />
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-50 p-8 shadow-2xl border-t border-slate-100">
               <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
-              <h3 className="text-xl font-bold text-slate-800 mb-6">Objavi novu smenu</h3>
+              <h3 className="text-xl font-bold text-slate-800 mb-6">{editingShift ? 'Izmeni smenu' : 'Objavi novu smenu'}</h3>
               <form onSubmit={handlePostShift} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Datum</label>
-                    <input name="date" type="date" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
+                    <input name="date" type="date" required defaultValue={editingShift?.date ? format(new Date(editingShift.date), 'yyyy-MM-dd') : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pozicija</label>
-                    <select name="role" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                    <select name="role" required defaultValue={editingShift?.role || ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
                       {industry === 'hospitality' ? (
                         <>
-                          <option>Konobar</option>
-                          <option>Šanker</option>
-                          <option>Barista</option>
-                          <option>Pomoćni radnik</option>
-                          <option>Kuvar</option>
-                          <option>Hostesa</option>
+                          <option value="Konobar">Konobar</option>
+                          <option value="Šanker">Šanker</option>
+                          <option value="Barista">Barista</option>
+                          <option value="Pomoćni radnik">Pomoćni radnik</option>
+                          <option value="Kuvar">Kuvar</option>
+                          <option value="Hostesa">Hostesa</option>
                         </>
                       ) : (
                         <>
-                          <option>Medicinska sestra</option>
-                          <option>Tehničar</option>
-                          <option>Laborant</option>
-                          <option>Fizioterapeut</option>
-                          <option>Instrumentarka</option>
-                          <option>Bolničar</option>
+                          <option value="Medicinska sestra">Medicinska sestra</option>
+                          <option value="Tehničar">Tehničar</option>
+                          <option value="Laborant">Laborant</option>
+                          <option value="Fizioterapeut">Fizioterapeut</option>
+                          <option value="Instrumentarka">Instrumentarka</option>
+                          <option value="Bolničar">Bolničar</option>
                         </>
                       )}
                     </select>
@@ -239,23 +281,23 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
                 {industry === 'healthcare' && (
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ustanova i Odeljenje</label>
-                    <select name="department" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
+                    <select name="department" required defaultValue={editingShift?.department || ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none">
                       <optgroup label="VMA">
-                        <option>VMA - Neurologija</option>
-                        <option>VMA - Traumatologija</option>
-                        <option>VMA - Ortopedija</option>
-                        <option>VMA - Nefrologija</option>
+                        <option value="VMA - Neurologija">VMA - Neurologija</option>
+                        <option value="VMA - Traumatologija">VMA - Traumatologija</option>
+                        <option value="VMA - Ortopedija">VMA - Ortopedija</option>
+                        <option value="VMA - Nefrologija">VMA - Nefrologija</option>
                       </optgroup>
                       <optgroup label="KBC Bežanijska kosa">
-                        <option>KBC BK - Intezivna nega</option>
-                        <option>KBC BK - Reumatologija</option>
-                        <option>KBC BK - Fizikalna</option>
-                        <option>KBC BK - Transfuzija</option>
+                        <option value="KBC BK - Intezivna nega">KBC BK - Intezivna nega</option>
+                        <option value="KBC BK - Reumatologija">KBC BK - Reumatologija</option>
+                        <option value="KBC BK - Fizikalna">KBC BK - Fizikalna</option>
+                        <option value="KBC BK - Transfuzija">KBC BK - Transfuzija</option>
                       </optgroup>
                       <optgroup label="Klinički centar">
-                        <option>KC - Ortopedija</option>
-                        <option>KC - Infektivna</option>
-                        <option>KC - Hitna</option>
+                        <option value="KC - Ortopedija">KC - Ortopedija</option>
+                        <option value="KC - Infektivna">KC - Infektivna</option>
+                        <option value="KC - Hitna">KC - Hitna</option>
                       </optgroup>
                     </select>
                   </div>
@@ -263,19 +305,19 @@ export default function VenueDashboard({ industry, city }: { industry: Industry,
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Početak</label>
-                    <input name="startTime" type="time" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
+                    <input name="startTime" type="time" required defaultValue={editingShift?.startTime || ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kraj</label>
-                    <input name="endTime" type="time" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
+                    <input name="endTime" type="time" required defaultValue={editingShift?.endTime || ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dnevnica (€)</label>
-                  <input name="pay" type="number" required placeholder="Npr. 35" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
+                  <input name="pay" type="number" required defaultValue={editingShift?.pay || ''} placeholder="Npr. 35" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-sm hover:bg-primary-light transition-all mt-4">
-                  Objavi smenu
+                  {editingShift ? 'Sačuvaj izmene' : 'Objavi smenu'}
                 </button>
               </form>
             </motion.div>

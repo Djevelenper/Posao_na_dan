@@ -14,51 +14,71 @@ const getISO = (daysOffset: number) => {
   return d.toISOString();
 };
 
+const venuesData: Record<string, any[]> = {
+  'Beograd_hospitality': [
+    { id: "bv1", name: "Kafeterija Vračar", avatar: "cafe1" }, { id: "bv2", name: "Red Bar", avatar: "bar1" }, { id: "bv3", name: "Destino", avatar: "destino" },
+    { id: "bv4", name: "Smokvica", avatar: "smokvica" }, { id: "bv5", name: "Koffein", avatar: "koffein" }, { id: "bv6", name: "Hotel Moskva", avatar: "moskva" }
+  ],
+  'Beograd_healthcare': [
+    { id: "bhv1", name: "VMA", avatar: "vma" }, { id: "bhv2", name: "Bel Medic", avatar: "belmedic" }, { id: "bhv3", name: "Medigroup", avatar: "medigroup" },
+    { id: "bhv4", name: "Euromedik", avatar: "euromedik" }
+  ],
+  'Novi Sad_hospitality': [
+    { id: "nv1", name: "Project 72", avatar: "p72" }, { id: "nv2", name: "Fish & Zelenish", avatar: "fish" }, { id: "nv3", name: "Petrus", avatar: "petrus" },
+    { id: "nv4", name: "Trčika", avatar: "trcika" }, { id: "nv5", name: "Absolut", avatar: "absolut" }, { id: "nv6", name: "Loft", avatar: "loft" }
+  ],
+  'Novi Sad_healthcare': [
+    { id: "nhv1", name: "KCV", avatar: "kcv" }, { id: "nhv2", name: "Poliklinika Marić", avatar: "maric" }, { id: "nhv3", name: "MC Poliklinika", avatar: "mc" },
+    { id: "nhv4", name: "Global Care", avatar: "global" }
+  ],
+  'Kragujevac_hospitality': [
+    { id: "kv1", name: "Mustang", avatar: "mustang" }, { id: "kv2", name: "Panorama", avatar: "panorama" }, { id: "kv3", name: "Dvorište", avatar: "dvoriste" },
+    { id: "kv4", name: "Caffe Cinema", avatar: "cinema" }, { id: "kv5", name: "Oblomov", avatar: "oblomov" }, { id: "kv6", name: "Triptih", avatar: "triptih" }
+  ],
+  'Kragujevac_healthcare': [
+    { id: "khv1", name: "UKC Kragujevac", avatar: "ukck" }, { id: "khv2", name: "Poliklinika Kragujmed", avatar: "kragujmed" }, { id: "khv3", name: "Medikus", avatar: "medikus" },
+    { id: "khv4", name: "Sanitas", avatar: "sanitas" }
+  ],
+  'Trebinje_hospitality': [
+    { id: "tv1", name: "Platani", avatar: "platani" }, { id: "tv2", name: "Market", avatar: "market" }, { id: "tv3", name: "Porto Galo", avatar: "porto" },
+    { id: "tv4", name: "Klub 089", avatar: "klub" }, { id: "tv5", name: "Azzaro", avatar: "azzaro" }
+  ],
+  'Trebinje_healthcare': [
+    { id: "thv1", name: "Bolnica Trebinje", avatar: "bolnicatb" }, { id: "thv2", name: "Dom zdravlja Trebinje", avatar: "dztb" }
+  ],
+  'Niš_hospitality': [
+    { id: "niv1", name: "Pleasure", avatar: "pleasure" }, { id: "niv2", name: "Hamam", avatar: "hamam" }, { id: "niv3", name: "Stambolijski", avatar: "stambol" }
+  ],
+  'Niš_healthcare': [
+    { id: "nihv1", name: "UKC Niš", avatar: "ukcnis" }, { id: "nihv2", name: "Vojna bolnica Niš", avatar: "vojnanis" }
+  ],
+  'Subotica_hospitality': [
+    { id: "sv1", name: "Boss Cafe", avatar: "boss" }, { id: "sv2", name: "Bates", avatar: "bates" }, { id: "sv3", name: "Bodrog", avatar: "bodrog" }
+  ],
+  'Subotica_healthcare': [
+    { id: "shv1", name: "Opšta bolnica Subotica", avatar: "obsub" }, { id: "shv2", name: "Dom zdravlja Subotica", avatar: "dzsub" }
+  ],
+  'Banja Luka_hospitality': [
+    { id: "blv1", name: "Mala Stanica", avatar: "stanica" }, { id: "blv2", name: "Baza", avatar: "baza" }, { id: "blv3", name: "Kafeterija 5", avatar: "k5" },
+    { id: "blv4", name: "Combo", avatar: "combo" }, { id: "blv5", name: "Smuggler", avatar: "smuggler" }
+  ],
+  'Banja Luka_healthcare': [
+    { id: "blhv1", name: "UKC RS", avatar: "ukcrs" }, { id: "blhv2", name: "Zavod Dr Miroslav Zotović", avatar: "zotovic" }, { id: "blhv3", name: "Dom zdravlja BL", avatar: "dzbl" }
+  ]
+};
+
+const workers = [
+  { id: "w1", name: "Nikola Petrović", avatar: "https://picsum.photos/seed/worker1/200/200", rating: 4.9, completedShifts: 25 },
+  { id: "w2", name: "Milica Jovanović", avatar: "https://picsum.photos/seed/worker2/200/200", rating: 4.8, completedShifts: 18 },
+  { id: "w3", name: "Marko Simić", avatar: "https://picsum.photos/seed/worker3/200/200", rating: 4.7, completedShifts: 12 },
+  { id: "w4", name: "Jelena Kostić", avatar: "https://picsum.photos/seed/worker4/200/200", rating: 5.0, completedShifts: 30 }
+];
+
 // In-memory store (Napomena: Na Vercelu se ovo resetuje pri svakom novom zahtevu jer je serverless)
 const generateShifts = () => {
-  const cities = ['Beograd', 'Novi Sad', 'Kragujevac', 'Trebinje', 'Banja Luka'];
+  const cities = ['Beograd', 'Novi Sad', 'Kragujevac', 'Niš', 'Subotica', 'Trebinje', 'Banja Luka'];
   const industries = ['hospitality', 'healthcare'];
-  const venues: Record<string, any[]> = {
-    'Beograd_hospitality': [
-      { name: "Kafeterija Vračar", avatar: "cafe1" }, { name: "Red Bar", avatar: "bar1" }, { name: "Destino", avatar: "destino" },
-      { name: "Smokvica", avatar: "smokvica" }, { name: "Koffein", avatar: "koffein" }, { name: "Hotel Moskva", avatar: "moskva" }
-    ],
-    'Beograd_healthcare': [
-      { name: "VMA", avatar: "vma" }, { name: "Bel Medic", avatar: "belmedic" }, { name: "Medigroup", avatar: "medigroup" },
-      { name: "Euromedik", avatar: "euromedik" }
-    ],
-    'Novi Sad_hospitality': [
-      { name: "Project 72", avatar: "p72" }, { name: "Fish & Zelenish", avatar: "fish" }, { name: "Petrus", avatar: "petrus" },
-      { name: "Trčika", avatar: "trcika" }, { name: "Absolut", avatar: "absolut" }, { name: "Loft", avatar: "loft" }
-    ],
-    'Novi Sad_healthcare': [
-      { name: "KCV", avatar: "kcv" }, { name: "Poliklinika Marić", avatar: "maric" }, { name: "MC Poliklinika", avatar: "mc" },
-      { name: "Global Care", avatar: "global" }
-    ],
-    'Kragujevac_hospitality': [
-      { name: "Mustang", avatar: "mustang" }, { name: "Panorama", avatar: "panorama" }, { name: "Dvorište", avatar: "dvoriste" },
-      { name: "Caffe Cinema", avatar: "cinema" }, { name: "Oblomov", avatar: "oblomov" }, { name: "Triptih", avatar: "triptih" }
-    ],
-    'Kragujevac_healthcare': [
-      { name: "UKC Kragujevac", avatar: "ukck" }, { name: "Poliklinika Kragujmed", avatar: "kragujmed" }, { name: "Medikus", avatar: "medikus" },
-      { name: "Sanitas", avatar: "sanitas" }
-    ],
-    'Trebinje_hospitality': [
-      { name: "Platani", avatar: "platani" }, { name: "Market", avatar: "market" }, { name: "Porto Galo", avatar: "porto" },
-      { name: "Klub 089", avatar: "klub" }, { name: "Azzaro", avatar: "azzaro" }
-    ],
-    'Trebinje_healthcare': [
-      { name: "Bolnica Trebinje", avatar: "bolnicatb" }, { name: "Dom zdravlja Trebinje", avatar: "dztb" }
-    ],
-    'Banja Luka_hospitality': [
-      { name: "Mala Stanica", avatar: "stanica" }, { name: "Baza", avatar: "baza" }, { name: "Kafeterija 5", avatar: "k5" },
-      { name: "Combo", avatar: "combo" }, { name: "Smuggler", avatar: "smuggler" }
-    ],
-    'Banja Luka_healthcare': [
-      { name: "UKC RS", avatar: "ukcrs" }, { name: "Zavod Dr Miroslav Zotović", avatar: "zotovic" }, { name: "Dom zdravlja BL", avatar: "dzbl" }
-    ]
-  };
-
+  
   const roles = {
     hospitality: ["Konobar", "Šanker", "Kuvar", "Pomoćni radnik", "Barista", "Hostesa"],
     healthcare: ["Medicinska sestra", "Tehničar", "Babica", "Laborant", "Negovatelj"]
@@ -70,17 +90,18 @@ const generateShifts = () => {
   cities.forEach(city => {
     industries.forEach(industry => {
       const key = `${city}_${industry}`;
-      const cityVenues = venues[key] || [];
+      const cityVenues = venuesData[key] || [];
       
       for (let m = 0; m < 3; m++) {
         for (let i = 0; i < 5; i++) {
           const venue = cityVenues[i % cityVenues.length];
+          if (!venue) continue;
           const date = new Date(now.getFullYear(), now.getMonth() + m, now.getDate() + (i * 3));
           const role = roles[industry as keyof typeof roles][Math.floor(Math.random() * roles[industry as keyof typeof roles].length)];
           
           allShifts.push({
             id: `${city[0]}${industry[0]}${m}${i}`,
-            venueId: `v_${city[0]}${i}`,
+            venueId: venue.id,
             venueName: venue.name,
             venueAvatar: `https://picsum.photos/seed/${venue.avatar}/100/100`,
             distance: `${(Math.random() * 5).toFixed(1)} km`,
@@ -104,17 +125,50 @@ let shifts = generateShifts();
 
 // API rute
 app.get("/api/shifts", (req, res) => {
-  const { industry, city } = req.query;
+  const { industry, city, venueId } = req.query;
   let filteredShifts = shifts;
   if (industry) filteredShifts = filteredShifts.filter(s => s.industry === industry);
   if (city) filteredShifts = filteredShifts.filter(s => s.city === city);
+  if (venueId) filteredShifts = filteredShifts.filter(s => s.venueId === venueId);
   res.json(filteredShifts);
+});
+
+app.get("/api/venues", (req, res) => {
+  const { industry, city } = req.query;
+  const key = `${city}_${industry}`;
+  res.json(venuesData[key as string] || []);
+});
+
+app.get("/api/workers", (req, res) => {
+  res.json(workers);
 });
 
 app.post("/api/shifts", (req, res) => {
   const newShift = { id: Math.random().toString(36).substr(2, 9), ...req.body, status: "open" };
   shifts.push(newShift);
   res.status(201).json(newShift);
+});
+
+app.put("/api/shifts/:id", (req, res) => {
+  const { id } = req.params;
+  const index = shifts.findIndex(s => s.id === id);
+  if (index !== -1) {
+    shifts[index] = { ...shifts[index], ...req.body };
+    res.json(shifts[index]);
+  } else {
+    res.status(404).json({ error: "Shift not found" });
+  }
+});
+
+app.delete("/api/shifts/:id", (req, res) => {
+  const { id } = req.params;
+  const index = shifts.findIndex(s => s.id === id);
+  if (index !== -1) {
+    shifts.splice(index, 1);
+    res.status(204).send();
+  } else {
+    res.status(404).json({ error: "Shift not found" });
+  }
 });
 
 app.post("/api/shifts/:id/apply", (req, res) => {
