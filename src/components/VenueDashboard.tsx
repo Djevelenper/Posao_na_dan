@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Calendar as CalendarIcon, Clock, Users, Euro, CheckCircle2, AlertCircle, ChevronRight, LayoutDashboard, Stethoscope, HeartPulse, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, Users, Euro, CheckCircle2, AlertCircle, ChevronRight, LayoutDashboard, Stethoscope, HeartPulse, Edit2, Trash2, Camera, User, X, Star, Briefcase, Save } from 'lucide-react';
 import { Shift, Industry, City } from '../types';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -8,12 +8,26 @@ import { cn } from '../lib/utils';
 export default function VenueDashboard({ industry, city, venue }: { industry: Industry, city: City, venue: any }) {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState<any | null>(null);
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'shifts'>('dashboard');
+  const [venueProfile, setVenueProfile] = useState(venue);
+
+  const [editForm, setEditForm] = useState({
+    name: venueProfile.name,
+    avatar: venueProfile.avatar.startsWith('http') ? venueProfile.avatar : `https://picsum.photos/seed/${venueProfile.avatar}/100/100`
+  });
 
   useEffect(() => {
     fetchShifts();
   }, [industry, city, venue.id]);
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setVenueProfile(prev => ({ ...prev, name: editForm.name, avatar: editForm.avatar }));
+    setIsProfileEditOpen(false);
+  };
 
   const fetchShifts = async (retries = 3) => {
     try {
@@ -89,9 +103,17 @@ export default function VenueDashboard({ industry, city, venue }: { industry: In
     <div className="pb-20 bg-slate-50 min-h-screen">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 px-6 py-4">
         <div className="flex justify-between items-center max-w-lg mx-auto">
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{city} • {venue.name}</p>
-            <h1 className="text-xl font-bold text-primary">Upravljanje</h1>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsProfileEditOpen(true)} className="relative group">
+              <img src={venueProfile.avatar.startsWith('http') ? venueProfile.avatar : `https://picsum.photos/seed/${venueProfile.avatar}/100/100`} alt={venueProfile.name} className="w-10 h-10 rounded-lg border border-slate-100 object-cover" />
+              <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <Camera className="w-4 h-4 text-white" />
+              </div>
+            </button>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{city} • {venueProfile.name}</p>
+              <h1 className="text-xl font-bold text-primary">Upravljanje</h1>
+            </div>
           </div>
           <button 
             onClick={() => {
@@ -145,7 +167,12 @@ export default function VenueDashboard({ industry, city, venue }: { industry: In
                     </div>
                     <div className="text-right">
                       <p className="text-[8px] font-bold text-slate-300 uppercase">Prijava od:</p>
-                      <p className="text-xs font-bold text-slate-700">Marko J.</p>
+                      <button 
+                        onClick={() => setSelectedWorker({ name: "Marko J.", avatar: "https://picsum.photos/seed/worker3/200/200", rating: 4.7, completedShifts: 12, profession: industry === 'hospitality' ? 'Konobar' : 'Medicinski tehničar' })}
+                        className="text-xs font-bold text-primary hover:underline"
+                      >
+                        Marko J.
+                      </button>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -241,6 +268,98 @@ export default function VenueDashboard({ industry, city, venue }: { industry: In
 
       {/* Post Shift Modal */}
       <AnimatePresence>
+        {isProfileEditOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsProfileEditOpen(false)} className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-40" />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-50 p-8 shadow-2xl border-t border-slate-100">
+              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-800">Uredi profil objekta</h3>
+                <button onClick={() => setIsProfileEditOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="flex justify-center mb-6">
+                  <div className="relative group cursor-pointer">
+                    <img src={editForm.avatar} alt="Avatar" className="w-24 h-24 rounded-2xl object-cover border-4 border-slate-50 shadow-sm" />
+                    <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Naziv objekta</label>
+                  <input 
+                    value={editForm.name} 
+                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">URL Logotipa</label>
+                  <input 
+                    value={editForm.avatar} 
+                    onChange={(e) => setEditForm(prev => ({ ...prev, avatar: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none" 
+                  />
+                </div>
+                <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-sm hover:bg-primary-light transition-all mt-4 flex items-center justify-center gap-2">
+                  <Save className="w-5 h-5" /> Sačuvaj izmene
+                </button>
+              </form>
+            </motion.div>
+          </>
+        )}
+
+        {selectedWorker && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedWorker(null)} className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-40" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="fixed inset-4 m-auto w-full max-w-sm h-fit bg-white rounded-[32px] z-50 p-8 shadow-2xl overflow-hidden">
+              <div className="text-center">
+                <img src={selectedWorker.avatar} alt={selectedWorker.name} className="w-24 h-24 rounded-2xl mx-auto mb-4 border-4 border-slate-50 object-cover shadow-sm" />
+                <h3 className="text-xl font-bold text-slate-800">{selectedWorker.name}</h3>
+                <p className="text-primary font-bold text-xs uppercase tracking-widest mb-6">{selectedWorker.profession}</p>
+                
+                <div className="grid grid-cols-2 gap-3 mb-8">
+                  <div className="bg-slate-50 p-4 rounded-2xl">
+                    <div className="flex items-center justify-center gap-1 text-primary mb-1">
+                      <Star className="w-4 h-4 fill-current" />
+                      <span className="font-bold">{selectedWorker.rating}</span>
+                    </div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase">Ocena</p>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl">
+                    <div className="flex items-center justify-center gap-1 text-primary mb-1">
+                      <Briefcase className="w-4 h-4" />
+                      <span className="font-bold">{selectedWorker.completedShifts}</span>
+                    </div>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase">Smena</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <CheckCircle2 className="w-5 h-5 text-success" />
+                    <span className="text-xs font-bold text-slate-600">Verifikovan profil</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <Clock className="w-5 h-5 text-primary" />
+                    <span className="text-xs font-bold text-slate-600">Dostupan odmah</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedWorker(null)}
+                  className="w-full mt-8 bg-slate-900 text-white py-4 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
+                >
+                  Zatvori
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+
         {isPostModalOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPostModalOpen(false)} className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-40" />
